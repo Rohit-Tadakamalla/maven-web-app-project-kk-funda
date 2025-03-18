@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+    
+    tools {
+        maven "3.9.9"
+    }
+    
+    stages {
+        stage('git checkout') {
+            steps {
+                git branch: 'development', 
+                    credentialsId: '371c3717-2a6e-47c5-b813-8efb0173a6ee', 
+                    url: 'https://github.com/Rohit-Tadakamalla/maven-web-app-project-kk-funda.git'
+            }
+        }
+        
+        stage('build') {
+            steps {
+                sh "mvn clean package"
+            }
+        }
+        
+        stage('sonar report') {
+            steps {
+                sh "mvn sonar:sonar"
+            }
+        }
+        
+        stage('nexus deploy') {
+            steps {
+                sh "mvn deploy"
+            }
+        }
+        
+        stage('tomcat') {
+            steps {
+                sh '''
+                    curl -u tomcat:tomcat \
+                    --upload-file /var/lib/jenkins/workspace/jio-project-scripted-piplines/target/maven-web-application.war \
+                    "http://13.234.67.22:8080/manager/text/deploy?path=/maven-web-application&update=true"
+                '''
+            }
+        }
+    }
+}
